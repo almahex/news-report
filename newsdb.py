@@ -31,7 +31,6 @@ def print_result(n, data):
                                  reverse=True):
             print '      (%i) "%s": %s views\n' % (it, key, value)
             it += 1
-        return
     elif n == 2:
         print QTWO
         it = 1
@@ -39,13 +38,11 @@ def print_result(n, data):
                                  reverse=True):
             print '      (%i) %s: %s views\n' % (it, key, value)
             it += 1
-        return
     elif n == 3:
         print QTHREE
         for key, value in sorted(data.iteritems(), key=lambda (k, v): (v, k),
                                  reverse=True):
             print '      %s: %s' % (key, value) + '% errors\n'
-        return
     else:
         print "Invalid selection"
 
@@ -62,34 +59,40 @@ def compute_result(question, query):
     db.close()
     result_parsed = parse_table(result)
     print_result(question, result_parsed)
-    return
 
 
-""" Queries that retrieve the proper information in order to answer the report
-questions. """
-compute_result(1, "SELECT title, result.num from articles, " +
-               "(SELECT article_slugs.slug, count(*) as num FROM log, " +
-               "(SELECT slug FROM articles) as article_slugs WHERE " +
-               "log.path = ('/article/' || slug) GROUP BY " +
-               "article_slugs.slug) as result WHERE articles.slug " +
-               "= result.slug ORDER BY num desc LIMIT 3;")
-compute_result(2, "SELECT final_result.name, sum(final_result.num) " +
-               "FROM (SELECT authors.name, author_id.num FROM authors, " +
-               "(SELECT articles.author, articles_visits.title, num FROM " +
-               "articles, (SELECT title, result.num from articles, (SELECT " +
-               "article_slugs.slug, count(*) as num FROM log, (SELECT slug " +
-               "FROM articles) as article_slugs WHERE log.path = (" +
-               "'/article/' || slug) GROUP BY article_slugs.slug) as result " +
-               "WHERE articles.slug = result.slug) as articles_visits WHERE " +
-               "articles.title = articles_visits.title) as author_id WHERE " +
-               "authors.id = author_id.author) as final_result GROUP BY " +
-               "final_result.name ORDER BY sum desc;")
-compute_result(3, "SELECT result.time::timestamp::date, result.errors FROM " +
-               "(SELECT total.time::timestamp::date, trunc((total_error." +
-               "count*100)/total.count::decimal, 2) as errors FROM (SELECT" +
-               " time::timestamp::date, count(log.status) FROM log GROUP BY" +
-               " time::timestamp::date) AS total, (SELECT time::timestamp::" +
-               "date, count(log.status) FROM log WHERE status='404 NOT " +
-               "FOUND' GROUP BY time::timestamp::date) AS total_error " +
-               "WHERE total.time::timestamp::date = total_error.time::times" +
-               "tamp::date) as result WHERE result.errors > 1.00;")
+def main():
+    """ Queries that retrieve the proper information in order to answer the
+    report questions. """
+    compute_result(1, "SELECT title, result.num from articles, "
+                   "(SELECT article_slugs.slug, count(*) as num FROM log, "
+                   "(SELECT slug FROM articles) as article_slugs WHERE "
+                   "log.path = ('/article/' || slug) GROUP BY "
+                   "article_slugs.slug) as result WHERE articles.slug "
+                   "= result.slug ORDER BY num desc LIMIT 3;")
+    compute_result(2, "SELECT final_result.name, sum(final_result.num) "
+                   "FROM (SELECT authors.name, author_id.num FROM authors, "
+                   "(SELECT articles.author, articles_visits.title, num FROM "
+                   "articles, (SELECT title, result.num from articles, (SELE"
+                   "CT article_slugs.slug, count(*) as num FROM log, (SELECT"
+                   " slug FROM articles) as article_slugs WHERE log.path = ("
+                   "'/article/' || slug) GROUP BY article_slugs.slug) as "
+                   "result WHERE articles.slug = result.slug) as "
+                   "articles_visits WHERE articles.title = "
+                   "articles_visits.title) as author_id WHERE authors.id = "
+                   "author_id.author) as final_result GROUP BY "
+                   "final_result.name ORDER BY sum desc;")
+    compute_result(3, "SELECT result.time::timestamp::date, result.errors FROM"
+                   " (SELECT total.time::timestamp::date, trunc((total_error."
+                   "count*100)/total.count::decimal, 2) as errors FROM (SELECT"
+                   " time::timestamp::date, count(log.status) FROM log GROUP "
+                   "BY time::timestamp::date) AS total, (SELECT "
+                   "time::timestamp::date, count(log.status) FROM log WHERE "
+                   "status='404 NOT FOUND' GROUP BY time::timestamp::date) AS "
+                   "total_error WHERE total.time::timestamp::date = "
+                   "total_error.time::timestamp::date) as result WHERE "
+                   "result.errors > 1.00;")
+
+
+if __name__ == "__main__":
+    main()
